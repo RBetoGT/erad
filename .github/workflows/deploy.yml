@@ -42,4 +42,4 @@ jobs:
         run: jupyter-book build docs
         
       - name: Deploy to GitHub Pages
-        run: ghp-import -n -p -f _build/html
+        run: ghp-import -n -p -f docs/_build/html
