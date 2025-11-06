@@ -45,9 +45,10 @@ jobs:
         
       # FIX: Removed trailing slash to resolve EISDIR error
       - name: Build Jupyter Book
-        run: cd docs
-        run: ls
-        run: jupyter-book build .
+        run: | 
+          cd docs
+          ls
+          jupyter-book build .
         
       - name: Deploy to GitHub Pages
         run: ghp-import -n -p -f _build/html
