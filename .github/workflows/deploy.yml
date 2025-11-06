@@ -16,19 +16,35 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+
+      - name: Install Jupyter Book
+        run: |
+          pip install --upgrade pip
+          pip install jupyter-book
+
+      - name: Verify correct executable
+        run: |
+          which jupyter-book
+          jupyter-book --version
+          python -m jupyter_book --version
+      
       - name: Install system dependencies (Graphviz)
         run:  |
           sudo apt-get update
           sudo apt-get install -y graphviz graphviz-dev
+          
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install graphviz pygraphviz 
           python -m pip install ".[doc,dev]"
-          pip install jupyter-book ghp-import matplotlib gdmloader
+          pip install ghp-import matplotlib gdmloader
 
-      - name: Build the book
-        run: jupyter-book build docs/ --builder html
+      - name: Clean old builds
+        run: rm -rf docs/_build
+      
+      - name: Build Jupyter Book
+        run: jupyter-book build docs/
 
       - name: Deploy to GitHub Pages
         run: |
