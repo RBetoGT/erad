@@ -45,13 +45,13 @@ There have been some recent efforts that consider resilience at the distribution
 
 ERAD is a free, open-source Python toolkit for computing energy resilience measures in the face of hazards like earthquakes and flooding for distribution systems. It uses graph-based analysis to perform computation down to the individual households. Users start by defining hazard models either manually or using historic extreme events. Next, they define all distribution system assets of interest. Outage scenarios in ERAD are generated based on Monte Carlo samples across the individual equipment survival probabilities. Finally, ERAD computes a range of energy metrics, including outage probability, outage duration, and outage impact on critical services.
 
-ERAD is now part of the [Grid-Data-Models](https://nrel-distribution-suites.github.io/grid-data-models/intro.html) (GDM) ecosystem! This integration enables ERAD to run resilience analyses directly on GDM-based distribution systems, improving interoperability with other distribution-focused tools and streamlining the development of automated workflows. 
+ERAD is now part of the [Grid-Data-Models](https://nrel-distribution-suites.github.io/grid-data-models/intro.html) (GDM) ecosystem. This integration enables ERAD to run resilience analyses directly on GDM-based distribution systems, improving interoperability with other distribution-focused tools and streamlining the development of automated workflows. 
 
 For outage simulations, ERAD uses asset fragility curves [@Jessica; @kongar_seismic_2017; @kongar_seismic_2014; @en10071037; @Jeddi; @BAGHMISHEH2021106909; @williams_tsunami_2020; @bennett_extending_2021] which are functions that relate hazard severity to survival probability for power system assets including cables, transformers, substations, roof-mounted solar panels, etc. [@rajabzadeh_improving_2022; @fema_hazus_2020; @farahani_earthquake_2020; @cirone_valutazione_2013; @su12041527]. Outage scenarios are then generated based on Monte Carlo samples across these individual equipment survival probabilities.
 
 # Example Usage
 
-ERAD has been used as part of multiple high-impact research efforts. Specifically, it was used to analyze energy access to critical services for 8 neighborhoods in the city of Los Angeles as it transitions to a 100% renewable energy future as part of the LA100 Equity Strategies project [@la100-es-report]. For transmission distribution cosimulation after a flooding disaster, ERAD has also been used to generate distribution system outage scenarios as a part of North American Energy Resilience Model [@narem] studies.
+ERAD has been used as part of multiple high-impact research efforts. Specifically, it was used to analyze energy access to critical services for 8 neighborhoods in the city of Los Angeles as it transitions to a 100% renewable energy future as part of the LA100 Equity Strategies project [@la100-es-report]. For transmission distribution cosimulation after a flooding disaster, ERAD has also been used to generate distribution system outage scenarios as a part of North American Energy Resilience Model [@naerm] studies.
 
 # Next Steps
 
