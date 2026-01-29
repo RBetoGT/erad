@@ -11,6 +11,7 @@ This demonstrates:
 
 import requests
 import json
+import tempfile
 from pathlib import Path
 
 BASE_URL = "http://localhost:8000"
@@ -71,7 +72,8 @@ def demo_upload_model():
     }
 
     # Save to temp file
-    temp_file = Path("/tmp/demo_system.json")  # noqa: B108
+    temp_dir = Path(tempfile.gettempdir())
+    temp_file = temp_dir / "demo_system.json"
     with open(temp_file, "w") as f:
         json.dump(sample_data, f, indent=2)
 
