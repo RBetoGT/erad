@@ -74,6 +74,7 @@ def scan_cache_directory() -> Dict[str, DistributionModelInfo]:
     # Get all JSON files in cache directory
     for file_path in cache_dir.glob("*.json"):
         if file_path.name == "models_metadata.json":
+            logger.info("Skipping metadata file")
             continue
 
         try:

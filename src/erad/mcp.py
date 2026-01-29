@@ -14,6 +14,7 @@ Or with uvx:
 """
 
 import json
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -38,6 +39,8 @@ from erad.runner import HazardSimulator, HazardScenarioGenerator
 from erad.systems.asset_system import AssetSystem
 from erad.systems.hazard_system import HazardSystem
 from erad.models.asset import Asset
+
+logger = logging.getLogger(__name__)
 
 
 # ========== Cache Directory Management ==========
@@ -95,13 +98,14 @@ def load_cached_models() -> dict[str, dict]:
                             "created_at": info.get("created_at"),
                             "file_path": str(file_path),
                         }
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to load distribution models metadata: {e}")
 
     # Also scan directory for files not in metadata
     cache_dir = get_cache_directory()
     for file_path in cache_dir.glob("*.json"):
         if file_path.name == "models_metadata.json":
+            logger.info("Skipping metadata file")
             continue
 
         # Extract model name
@@ -127,6 +131,7 @@ def load_cached_models() -> dict[str, dict]:
                     "file_path": str(file_path),
                 }
             except Exception:  # noqa: B112
+                logger.info(f"Skipping invalid distribution model file: {file_path}")
                 continue
 
     return models
@@ -150,13 +155,14 @@ def load_cached_hazard_models() -> dict[str, dict]:
                             "created_at": info.get("created_at"),
                             "file_path": str(file_path),
                         }
-        except Exception:  # noqa: B110
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to load hazard models metadata: {e}")
 
     # Also scan directory for files not in metadata
     cache_dir = get_hazard_cache_directory()
     for file_path in cache_dir.glob("*.json"):
         if file_path.name == "models_metadata.json":
+            logger.info("Skipping metadata file")
             continue
 
         # Extract model name
@@ -182,6 +188,7 @@ def load_cached_hazard_models() -> dict[str, dict]:
                     "file_path": str(file_path),
                 }
             except Exception:  # noqa: B112
+                logger.info(f"Skipping invalid hazard model file: {file_path}")
                 continue
 
     return models

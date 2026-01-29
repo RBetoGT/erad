@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from loguru import logger
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -447,6 +448,7 @@ def list_models(
 
         for file_path in cache_dir.glob("*.json"):
             if file_path.name == "models_metadata.json":
+                logger.info("Skipping metadata file")
                 continue
 
             # Check if already in metadata
@@ -652,6 +654,7 @@ def list_hazard_models(
 
         for file_path in cache_dir.glob("*.json"):
             if file_path.name == "models_metadata.json":
+                logger.info("Skipping metadata file")
                 continue
 
             # Check if already in metadata
@@ -995,6 +998,7 @@ def cache_refresh():
     new_count = 0
     for file_path in cache_dir.glob("*.json"):
         if file_path.name == "models_metadata.json":
+            logger.info("Skipping metadata file")
             continue
 
         model_name = file_path.stem.rsplit("_", 1)[0] if "_" in file_path.stem else file_path.stem
