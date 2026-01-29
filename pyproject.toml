@@ -71,6 +71,7 @@ dev = [
     "mkdocstrings[python]",
     "pylint",
     "pytest",
+    "pytest-asyncio",
     "pytest-cov",
     "ruff",
     "httpx>=0.25.0"
@@ -140,6 +141,8 @@ docstring-code-line-length = "dynamic"
 version = {attr = "erad.__version__"}
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
 ]
