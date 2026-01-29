@@ -268,7 +268,9 @@ class Asset(Component):
             if prob_model and prob_model.survival_probability == 1:
                 curve = self.get_vadid_curve(frag_curves, field)
                 if curve is None:
-                    raise Exception(f"No fragility curve found for field - {field}")
+                    raise Exception(
+                        f"No fragility curve found for field - {field} for asset type {self.asset_type.name}"
+                    )
                 prob_inst = curve.prob_model
                 quantity_name = [
                     model_field
