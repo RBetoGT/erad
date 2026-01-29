@@ -1,6 +1,7 @@
 """Tests for the ERAD CLI."""
 
 import json
+import re
 
 import pytest
 from typer.testing import CliRunner
@@ -9,6 +10,12 @@ from erad.cli import app
 
 
 runner = CliRunner(mix_stderr=False, env={"NO_COLOR": "1"})
+
+
+def strip_ansi(text: str) -> str:
+    """Strip ANSI escape codes from text."""
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
+    return ansi_escape.sub("", text)
 
 
 # ========== Fixtures ==========
@@ -338,9 +345,10 @@ class TestServerCommands:
         """Test server start help."""
         result = runner.invoke(app, ["server", "start", "--help"])
         assert result.exit_code == 0
-        assert "--host" in result.stdout
-        assert "--port" in result.stdout
-        assert "--reload" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "--host" in output
+        assert "--port" in output
+        assert "--reload" in output
 
     def test_server_mcp_help(self):
         """Test server mcp help."""
