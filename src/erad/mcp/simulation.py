@@ -104,7 +104,7 @@ async def load_hazard_model_tool(args: dict) -> dict:
 async def create_hazard_system_tool(args: dict) -> dict:
     """Create a new empty hazard system."""
     try:
-        hazard_system = HazardSystem(auto_add_composed_components=True)
+        hazard_system = HazardSystem()
         system_id = state.generate_id()
         state.hazard_systems[system_id] = hazard_system
 

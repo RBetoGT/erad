@@ -17,89 +17,12 @@ The MCP server exposes ~25 tools organized into functional categories:
 
 The server is built with a **modular architecture** for easy maintenance and extensibility. Each tool category is implemented in its own Python module, making it straightforward to add new capabilities or customize existing ones.
 
-## Architecture & Workflow
-
-```{mermaid}
-graph TB
-    Start([AI Assistant Request]) --> MCP[MCP Server<br/>stdio transport]
-    
-    MCP --> Tools{Tool Categories}
-    
-    Tools --> Sim[Simulation Tools<br/>5 tools]
-    Tools --> Asset[Asset Tools<br/>4 tools]
-    Tools --> Hazard[Hazard Tools<br/>6 tools]
-    Tools --> Frag[Fragility Tools<br/>2 tools]
-    Tools --> Export[Export Tools<br/>3 tools]
-    Tools --> Cache[Cache Tools<br/>2 tools]
-    Tools --> Util[Utility Tools<br/>4 tools]
-    
-    subgraph Workflow["Typical Simulation Workflow"]
-        direction TB
-        W1[1. Load Distribution Model<br/>load_gridlabd_model_tool]
-        W2[2. Create Hazard System<br/>create_hazard_system_tool]
-        W3[3. Load Historic Hazard<br/>load_historic_*_tool]
-        W4[4. Run Simulation<br/>run_hazard_simulation_tool]
-        W5[5. Query Results<br/>query_assets_tool]
-        W6[6. Generate Scenarios<br/>generate_scenarios_tool]
-        W7[7. Export Results<br/>export_to_sqlite_tool]
-        
-        W1 --> W2
-        W2 --> W3
-        W3 --> W4
-        W4 --> W5
-        W5 --> W6
-        W6 --> W7
-    end
-    
-    Sim -.->|implements| Workflow
-    Hazard -.->|provides| W3
-    Export -.->|outputs| W7
-    Asset -.->|queries| W5
-    
-    subgraph State["Server State Management"]
-        AS[(Asset Systems)]
-        HS[(Hazard Systems)]
-        SR[(Simulation Results)]
-        CM[(Cached Models)]
-    end
-    
-    Workflow --> State
-    Cache --> CM
-    
-    subgraph HazardTypes["Supported Hazard Types"]
-        H1[Hurricanes<br/>141 timesteps]
-        H2[Earthquakes<br/>single event]
-        H3[Wildfires<br/>with sub-areas]
-    end
-    
-    Hazard --> HazardTypes
-    
-    W7 --> Output[(SQLite Database<br/>Results & Analysis)]
-    
-    Frag -.->|damage curves| W4
-    
-    style MCP fill:#4a90e2,stroke:#2e5c8a,color:#fff
-    style Workflow fill:#e8f4f8,stroke:#4a90e2
-    style State fill:#fff3cd,stroke:#ffc107
-    style HazardTypes fill:#d4edda,stroke:#28a745
-    style Output fill:#f8d7da,stroke:#dc3545
-```
-
-The diagram above illustrates the complete MCP server architecture and a typical simulation workflow. The server organizes 26 tools into 7 functional categories, maintains stateful storage for systems and results, and supports all three major hazard types (hurricanes, earthquakes, wildfires).
-
 ## Installation
 
 The MCP server is included with ERAD. Install with MCP support:
 
 ```bash
-pip install NREL-erad[mcp]
-```
-
-Or install the base package first and add MCP later:
-
-```bash
 pip install NREL-erad
-pip install NREL-erad[mcp]
 ```
 
 ## Quick Start

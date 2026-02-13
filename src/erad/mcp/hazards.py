@@ -27,14 +27,14 @@ async def list_historic_hurricanes_tool(args: dict) -> dict:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        query = 'SELECT DISTINCT "SID ", "NAME ", "SEASON (Year)" FROM historic_hurricanes'
+        query = "SELECT DISTINCT SID, NAME, SEASON FROM historic_hurricanes"
         params = []
 
         if year:
-            query += ' WHERE "SEASON (Year)" = ?'
+            query += " WHERE SEASON = ?"
             params.append(year)
 
-        query += ' ORDER BY "SEASON (Year)" DESC, "NAME " LIMIT ?'
+        query += " ORDER BY SEASON DESC, NAME LIMIT ?"
         params.append(limit)
 
         cursor.execute(query, params)
@@ -65,14 +65,14 @@ async def list_historic_earthquakes_tool(args: dict) -> dict:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        query = "SELECT ID, Date, Magnitude, Latitude, Longitude FROM historic_earthquakes"
+        query = "SELECT earthquake_code, date, magnitude, latitude, longitude FROM historic_earthquakes"
         params = []
 
         if min_magnitude:
-            query += " WHERE Magnitude >= ?"
+            query += " WHERE magnitude >= ?"
             params.append(min_magnitude)
 
-        query += " ORDER BY Magnitude DESC LIMIT ?"
+        query += " ORDER BY magnitude DESC LIMIT ?"
         params.append(limit)
 
         cursor.execute(query, params)
@@ -81,7 +81,7 @@ async def list_historic_earthquakes_tool(args: dict) -> dict:
 
         earthquakes = [
             {
-                "code": row[0],
+                "earthquake_code": row[0],
                 "date": row[1],
                 "magnitude": row[2],
                 "latitude": row[3],
@@ -112,14 +112,14 @@ async def list_historic_wildfires_tool(args: dict) -> dict:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        query = "SELECT DISTINCT firename, fireyear FROM historic_fires"
+        query = "SELECT DISTINCT FIRE_NAME, FIRE_YEAR FROM historic_fires"
         params = []
 
         if year:
-            query += " WHERE fireyear = ?"
+            query += " WHERE FIRE_YEAR = ?"
             params.append(year)
 
-        query += " ORDER BY fireyear DESC, firename LIMIT ?"
+        query += " ORDER BY FIRE_YEAR DESC, FIRE_NAME LIMIT ?"
         params.append(limit)
 
         cursor.execute(query, params)
@@ -149,22 +149,15 @@ async def load_historic_hurricane_tool(args: dict) -> dict:
         hazard_system = state.hazard_systems[hazard_system_id]
 
         logger.info(f"Loading hurricane {hurricane_sid}")
-        wind_models = WindModel.from_hurricane_sid(hurricane_sid)
-
-        if not wind_models:
-            return {"error": f"No wind models found for hurricane {hurricane_sid}"}
-
-        # Add all timesteps to hazard system
-        for wind_model in wind_models:
-            hazard_system.add_component(wind_model)
+        wind_model = WindModel.from_hurricane_sid(hurricane_sid)
+        hazard_system.add_component(wind_model)
 
         return {
             "success": True,
             "hurricane_sid": hurricane_sid,
-            "timesteps_loaded": len(wind_models),
-            "first_timestamp": wind_models[0].timestamp.isoformat(),
-            "last_timestamp": wind_models[-1].timestamp.isoformat(),
-            "message": f"Hurricane {hurricane_sid} with {len(wind_models)} timesteps added to hazard system {hazard_system_id}",
+            "timestamp": wind_model.timestamp.isoformat(),
+            "max_wind_speed": str(wind_model.max_wind_speed),
+            "message": f"Hurricane {hurricane_sid} added to hazard system {hazard_system_id}",
         }
 
     except Exception as e:
@@ -190,8 +183,8 @@ async def load_historic_earthquake_tool(args: dict) -> dict:
         return {
             "success": True,
             "earthquake_code": earthquake_code,
-            "magnitude": float(earthquake_model.magnitude),
             "timestamp": earthquake_model.timestamp.isoformat(),
+            "magnitude": earthquake_model.magnitude,
             "message": f"Earthquake {earthquake_code} added to hazard system {hazard_system_id}",
         }
 
@@ -219,8 +212,7 @@ async def load_historic_wildfire_tool(args: dict) -> dict:
             "success": True,
             "wildfire_name": wildfire_name,
             "timestamp": fire_model.timestamp.isoformat(),
-            "affected_areas_count": len(fire_model.affected_areas),
-            "message": f"Wildfire {wildfire_name} with {len(fire_model.affected_areas)} affected areas added to hazard system {hazard_system_id}",
+            "message": f"Wildfire {wildfire_name} added to hazard system {hazard_system_id}",
         }
 
     except Exception as e:

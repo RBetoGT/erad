@@ -31,7 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install graphviz pygraphviz
-          python -m pip install ".[doc,dev]"
+          python -m pip install ".[doc,dev,mcp]"
           pip install ghp-import matplotlib gdmloader
           
       - name: Clean old builds

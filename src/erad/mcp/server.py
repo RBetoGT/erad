@@ -478,65 +478,46 @@ async def handle_list_tools() -> list[Tool]:
     ]
 
 
+# Tool dispatch registry
+_TOOL_HANDLERS = {
+    "load_distribution_model": load_distribution_model_tool,
+    "load_hazard_model": load_hazard_model_tool,
+    "create_hazard_system": create_hazard_system_tool,
+    "run_simulation": run_simulation_tool,
+    "generate_scenarios": generate_scenarios_tool,
+    "query_assets": query_assets_tool,
+    "get_asset_details": get_asset_details_tool,
+    "get_asset_statistics": get_asset_statistics_tool,
+    "get_network_topology": get_network_topology_tool,
+    "list_historic_hurricanes": list_historic_hurricanes_tool,
+    "list_historic_earthquakes": list_historic_earthquakes_tool,
+    "list_historic_wildfires": list_historic_wildfires_tool,
+    "load_historic_hurricane": load_historic_hurricane_tool,
+    "load_historic_earthquake": load_historic_earthquake_tool,
+    "load_historic_wildfire": load_historic_wildfire_tool,
+    "list_fragility_curves": list_fragility_curves_tool,
+    "get_fragility_curve_parameters": get_fragility_curve_parameters_tool,
+    "export_to_sqlite": export_to_sqlite_tool,
+    "export_to_json": export_to_json_tool,
+    "export_tracked_changes": export_tracked_changes_tool,
+    "list_cached_models": list_cached_models_tool,
+    "get_cache_info": get_cache_info_tool,
+    "search_documentation": search_documentation_tool,
+    "list_asset_types": list_asset_types_tool,
+    "list_loaded_systems": list_loaded_systems_tool,
+    "clear_system": clear_system_tool,
+}
+
+
 @app.call_tool()
-async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:  # noqa: C901
+async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
     """Handle tool calls."""
     try:
-        # Route to appropriate tool handler
-        if name == "load_distribution_model":
-            result = await load_distribution_model_tool(arguments)
-        elif name == "load_hazard_model":
-            result = await load_hazard_model_tool(arguments)
-        elif name == "create_hazard_system":
-            result = await create_hazard_system_tool(arguments)
-        elif name == "run_simulation":
-            result = await run_simulation_tool(arguments)
-        elif name == "generate_scenarios":
-            result = await generate_scenarios_tool(arguments)
-        elif name == "query_assets":
-            result = await query_assets_tool(arguments)
-        elif name == "get_asset_details":
-            result = await get_asset_details_tool(arguments)
-        elif name == "get_asset_statistics":
-            result = await get_asset_statistics_tool(arguments)
-        elif name == "get_network_topology":
-            result = await get_network_topology_tool(arguments)
-        elif name == "list_historic_hurricanes":
-            result = await list_historic_hurricanes_tool(arguments)
-        elif name == "list_historic_earthquakes":
-            result = await list_historic_earthquakes_tool(arguments)
-        elif name == "list_historic_wildfires":
-            result = await list_historic_wildfires_tool(arguments)
-        elif name == "load_historic_hurricane":
-            result = await load_historic_hurricane_tool(arguments)
-        elif name == "load_historic_earthquake":
-            result = await load_historic_earthquake_tool(arguments)
-        elif name == "load_historic_wildfire":
-            result = await load_historic_wildfire_tool(arguments)
-        elif name == "list_fragility_curves":
-            result = await list_fragility_curves_tool(arguments)
-        elif name == "get_fragility_curve_parameters":
-            result = await get_fragility_curve_parameters_tool(arguments)
-        elif name == "export_to_sqlite":
-            result = await export_to_sqlite_tool(arguments)
-        elif name == "export_to_json":
-            result = await export_to_json_tool(arguments)
-        elif name == "export_tracked_changes":
-            result = await export_tracked_changes_tool(arguments)
-        elif name == "list_cached_models":
-            result = await list_cached_models_tool(arguments)
-        elif name == "get_cache_info":
-            result = await get_cache_info_tool(arguments)
-        elif name == "search_documentation":
-            result = await search_documentation_tool(arguments)
-        elif name == "list_asset_types":
-            result = await list_asset_types_tool(arguments)
-        elif name == "list_loaded_systems":
-            result = await list_loaded_systems_tool(arguments)
-        elif name == "clear_system":
-            result = await clear_system_tool(arguments)
-        else:
+        handler = _TOOL_HANDLERS.get(name)
+        if handler is None:
             result = {"error": f"Unknown tool: {name}"}
+        else:
+            result = await handler(arguments)
 
         return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 

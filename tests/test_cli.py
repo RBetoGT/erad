@@ -52,6 +52,7 @@ def mock_cache_dir(temp_cache_dir, monkeypatch):
         return temp_cache_dir
 
     monkeypatch.setattr("erad.cli.get_cache_directory", mock_get_cache_dir)
+    monkeypatch.setattr("erad.cli.get_hazard_cache_directory", mock_get_cache_dir)
     return temp_cache_dir
 
 
@@ -340,15 +341,6 @@ class TestSimulationCommands:
 
 class TestServerCommands:
     """Test server subcommands."""
-
-    def test_server_start_help(self):
-        """Test server start help."""
-        result = runner.invoke(app, ["server", "start", "--help"])
-        assert result.exit_code == 0
-        output = strip_ansi(result.stdout)
-        assert "--host" in output
-        assert "--port" in output
-        assert "--reload" in output
 
     def test_server_mcp_help(self):
         """Test server mcp help."""
