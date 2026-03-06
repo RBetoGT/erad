@@ -38,7 +38,8 @@ jobs:
         run: rm -rf docs/_build
         
       - name: Build Jupyter Book
-        run: jupyter-book build docs
+        working-directory: docs
+        run: jupyter-book build --html --force
         
       - name: Deploy to GitHub Pages
         run: ghp-import -n -p -f docs/_build/html
