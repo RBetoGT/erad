@@ -39,6 +39,8 @@ jobs:
         
       - name: Build Jupyter Book
         working-directory: docs
+        env:
+          BASE_URL: /${{ github.event.repository.name }}
         run: jupyter-book build --html --force
         
       - name: Deploy to GitHub Pages
