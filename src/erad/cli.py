@@ -5,11 +5,10 @@ A comprehensive CLI for running hazard simulations on distribution systems.
 """
 
 import json
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import typer
 from loguru import logger
@@ -17,6 +16,11 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
+
+from erad.mcp.helpers import (
+    get_cache_directory as _get_cache_directory,
+    get_hazard_cache_directory as _get_hazard_cache_directory,
+)
 
 # Initialize Typer app
 app = typer.Typer(
@@ -45,30 +49,64 @@ console = Console()
 
 def get_cache_directory() -> Path:
     """Get the platform-specific cache directory for distribution models."""
-    if sys.platform == "win32":
-        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
-    elif sys.platform == "darwin":
-        base = Path.home() / ".cache"
-    else:
-        base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-
-    cache_dir = base / "erad" / "distribution_models"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir
+    return _get_cache_directory()
 
 
 def get_hazard_cache_directory() -> Path:
     """Get the platform-specific cache directory for hazard models."""
-    if sys.platform == "win32":
-        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
-    elif sys.platform == "darwin":
-        base = Path.home() / ".cache"
-    else:
-        base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    return _get_hazard_cache_directory()
 
-    cache_dir = base / "erad" / "hazard_models"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir
+
+def _load_cached_systems(
+    model: str,
+    hazard_model: str,
+    update_status: Optional[Callable[[str], None]] = None,
+):
+    """Load cached distribution/hazard systems and construct runtime ERAD systems."""
+    from gdm.distribution import DistributionSystem
+    from erad.systems import AssetSystem, HazardSystem
+
+    dist_models = load_cached_models()
+    hazard_models = load_cached_hazard_models()
+
+    if model not in dist_models:
+        console.print(f"[red]Error:[/red] Distribution model '{model}' not found in cache.")
+        console.print(f"Available models: {list(dist_models.keys())}")
+        raise typer.Exit(code=1)
+
+    if hazard_model not in hazard_models:
+        console.print(f"[red]Error:[/red] Hazard model '{hazard_model}' not found in cache.")
+        console.print(f"Available hazard models: {list(hazard_models.keys())}")
+        raise typer.Exit(code=1)
+
+    if update_status:
+        update_status("Loading distribution system...")
+
+    dist_file = dist_models[model]["file_path"]
+    try:
+        with open(dist_file, "r") as f:
+            data = json.load(f)
+        dist_system = DistributionSystem(**data)
+    except Exception as e:
+        console.print(f"[red]Error loading distribution model:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    if update_status:
+        update_status("Creating asset system...")
+    asset_system = AssetSystem.from_gdm(dist_system)
+
+    if update_status:
+        update_status("Loading hazard system...")
+    hazard_file = hazard_models[hazard_model]["file_path"]
+    try:
+        with open(hazard_file, "r") as f:
+            hazard_data = json.load(f)
+        hazard_system = HazardSystem.from_json(hazard_data)
+    except Exception as e:
+        console.print(f"[red]Error loading hazard model:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    return asset_system, hazard_system
 
 
 def get_metadata_file() -> Path:
@@ -184,54 +222,21 @@ def simulate(
         erad simulate my_system earthquake_scenario
         erad simulate my_system flood_hazard --output results.sqlite
     """
-    from gdm.distribution import DistributionSystem
     from erad.runner import HazardSimulator
-    from erad.systems import AssetSystem, HazardSystem
     from erad.models.asset import Asset
-
-    dist_models = load_cached_models()
-    hazard_models = load_cached_hazard_models()
-
-    if model not in dist_models:
-        console.print(f"[red]Error:[/red] Distribution model '{model}' not found in cache.")
-        console.print(f"Available models: {list(dist_models.keys())}")
-        raise typer.Exit(code=1)
-
-    if hazard_model not in hazard_models:
-        console.print(f"[red]Error:[/red] Hazard model '{hazard_model}' not found in cache.")
-        console.print(f"Available hazard models: {list(hazard_models.keys())}")
-        raise typer.Exit(code=1)
 
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         console=console,
     ) as progress:
-        # Load distribution system
-        task = progress.add_task("Loading distribution system...", total=None)
-        dist_file = dist_models[model]["file_path"]
+        task = progress.add_task("Loading cached systems...", total=None)
 
-        try:
-            with open(dist_file, "r") as f:
-                data = json.load(f)
-            dist_system = DistributionSystem(**data)
-        except Exception as e:
-            console.print(f"[red]Error loading distribution model:[/red] {e}")
-            raise typer.Exit(code=1)
-
-        progress.update(task, description="Creating asset system...")
-        asset_system = AssetSystem.from_gdm(dist_system)
-
-        progress.update(task, description="Loading hazard system...")
-        hazard_file = hazard_models[hazard_model]["file_path"]
-
-        try:
-            with open(hazard_file, "r") as f:
-                hazard_data = json.load(f)
-            hazard_system = HazardSystem.from_json(hazard_data)
-        except Exception as e:
-            console.print(f"[red]Error loading hazard model:[/red] {e}")
-            raise typer.Exit(code=1)
+        asset_system, hazard_system = _load_cached_systems(
+            model,
+            hazard_model,
+            update_status=lambda description: progress.update(task, description=description),
+        )
 
         progress.update(task, description="Running simulation...")
 
@@ -304,52 +309,20 @@ def generate(  # noqa: C901
     """
     import tempfile
     import zipfile
-    from gdm.distribution import DistributionSystem
     from erad.runner import HazardScenarioGenerator
-    from erad.systems import AssetSystem, HazardSystem
-
-    dist_models = load_cached_models()
-    hazard_models = load_cached_hazard_models()
-
-    if model not in dist_models:
-        console.print(f"[red]Error:[/red] Distribution model '{model}' not found in cache.")
-        console.print(f"Available models: {list(dist_models.keys())}")
-        raise typer.Exit(code=1)
-
-    if hazard_model not in hazard_models:
-        console.print(f"[red]Error:[/red] Hazard model '{hazard_model}' not found in cache.")
-        console.print(f"Available hazard models: {list(hazard_models.keys())}")
-        raise typer.Exit(code=1)
 
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         console=console,
     ) as progress:
-        task = progress.add_task("Loading distribution system...", total=None)
-        dist_file = dist_models[model]["file_path"]
+        task = progress.add_task("Loading cached systems...", total=None)
 
-        try:
-            with open(dist_file, "r") as f:
-                data = json.load(f)
-            dist_system = DistributionSystem(**data)
-        except Exception as e:
-            console.print(f"[red]Error loading distribution model:[/red] {e}")
-            raise typer.Exit(code=1)
-
-        progress.update(task, description="Creating asset system...")
-        asset_system = AssetSystem.from_gdm(dist_system)
-
-        progress.update(task, description="Loading hazard system...")
-        hazard_file = hazard_models[hazard_model]["file_path"]
-
-        try:
-            with open(hazard_file, "r") as f:
-                hazard_data = json.load(f)
-            hazard_system = HazardSystem.from_json(hazard_data)
-        except Exception as e:
-            console.print(f"[red]Error loading hazard model:[/red] {e}")
-            raise typer.Exit(code=1)
+        asset_system, hazard_system = _load_cached_systems(
+            model,
+            hazard_model,
+            update_status=lambda description: progress.update(task, description=description),
+        )
 
         progress.update(task, description=f"Generating {samples} scenarios...")
 
