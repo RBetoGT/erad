@@ -20,7 +20,7 @@ jobs:
       - name: Install Jupyter Book
         run: |
           pip install --upgrade pip
-          pip install jupyter-book==1.0.4.post1
+          pip install jupyter-book==2.1.2
           
       - name: Install system dependencies (Graphviz)
         run: |
@@ -39,7 +39,7 @@ jobs:
         
       # FIX: Removed trailing slash to resolve EISDIR error
       - name: Build Jupyter Book
-        run: jupyter-book build docs
+        run: jb build docs
         
       - name: Deploy to GitHub Pages
         run: ghp-import -n -p -f docs/_build/html
